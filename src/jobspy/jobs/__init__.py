@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 from datetime import date
 from enum import Enum
@@ -57,7 +59,7 @@ class JobType(Enum):
 class Country(Enum):
     """
     Gets the subdomain for Indeed and Glassdoor.
-    The second item in the tuple is the subdomain for Indeed
+    The second item in the tuple is the subdomain (and API country code if there's a ':' separator) for Indeed
     The third item in the tuple is the subdomain (and tld if there's a ':' separator) for Glassdoor
     """
 
@@ -90,7 +92,8 @@ class Country(Enum):
     JAPAN = ("japan", "jp")
     KUWAIT = ("kuwait", "kw")
     LUXEMBOURG = ("luxembourg", "lu")
-    MALAYSIA = ("malaysia", "malaysia")
+    MALAYSIA = ("malaysia", "malaysia:my", "com")
+    MALTA = ("malta", "malta:mt", "mt")
     MEXICO = ("mexico", "mx", "com.mx")
     MOROCCO = ("morocco", "ma")
     NETHERLANDS = ("netherlands", "nl", "nl")
@@ -115,14 +118,14 @@ class Country(Enum):
     SWITZERLAND = ("switzerland", "ch", "de:ch")
     TAIWAN = ("taiwan", "tw")
     THAILAND = ("thailand", "th")
-    TURKEY = ("turkey", "tr")
+    TURKEY = ("türkiye,turkey", "tr")
     UKRAINE = ("ukraine", "ua")
     UNITEDARABEMIRATES = ("united arab emirates", "ae")
-    UK = ("uk,united kingdom", "uk", "co.uk")
-    USA = ("usa,us,united states", "www", "com")
+    UK = ("uk,united kingdom", "uk:gb", "co.uk")
+    USA = ("usa,us,united states", "www:us", "com")
     URUGUAY = ("uruguay", "uy")
     VENEZUELA = ("venezuela", "ve")
-    VIETNAM = ("vietnam", "vn")
+    VIETNAM = ("vietnam", "vn", "com")
 
     # internal for ziprecruiter
     US_CANADA = ("usa/ca", "www")
@@ -132,7 +135,10 @@ class Country(Enum):
 
     @property
     def indeed_domain_value(self):
-        return self.value[1]
+        subdomain, _, api_country_code = self.value[1].partition(":")
+        if subdomain and api_country_code:
+            return subdomain, api_country_code.upper()
+        return self.value[1], self.value[1].upper()
 
     @property
     def glassdoor_domain_value(self):
@@ -145,7 +151,7 @@ class Country(Enum):
         else:
             raise Exception(f"Glassdoor is not available for {self.name}")
 
-    def get_url(self):
+    def get_glassdoor_url(self):
         return f"https://{self.glassdoor_domain_value}/"
 
     @classmethod
@@ -153,7 +159,7 @@ class Country(Enum):
         """Convert a string to the corresponding Country enum."""
         country_str = country_str.strip().lower()
         for country in cls:
-            country_names = country.value[0].split(',')
+            country_names = country.value[0].split(",")
             if country_str in country_names:
                 return country
         valid_countries = [country.value for country in cls]
@@ -163,7 +169,7 @@ class Country(Enum):
 
 
 class Location(BaseModel):
-    country: Country | None = None
+    country: Country | str | None = None
     city: Optional[str] = None
     state: Optional[str] = None
 
@@ -173,7 +179,12 @@ class Location(BaseModel):
             location_parts.append(self.city)
         if self.state:
             location_parts.append(self.state)
-        if self.country and self.country not in (Country.US_CANADA, Country.WORLDWIDE):
+        if isinstance(self.country, str):
+            location_parts.append(self.country)
+        elif self.country and self.country not in (
+            Country.US_CANADA,
+            Country.WORLDWIDE,
+        ):
             country_name = self.country.value[0]
             if "," in country_name:
                 country_name = country_name.split(",")[0]
@@ -216,22 +227,40 @@ class DescriptionFormat(Enum):
 
 
 class JobPost(BaseModel):
+    id: str | None = None
     title: str
-    company_name: str
+    company_name: str | None
     job_url: str
+    job_url_direct: str | None = None
     location: Optional[Location]
 
     description: str | None = None
     company_url: str | None = None
+    company_url_direct: str | None = None
 
     job_type: list[JobType] | None = None
     compensation: Compensation | None = None
     date_posted: date | None = None
-    benefits: str | None = None
     emails: list[str] | None = None
-    num_urgent_words: int | None = None
     is_remote: bool | None = None
-    # company_industry: str | None = None
+    listing_type: str | None = None
+
+    # linkedin specific
+    job_level: str | None = None
+
+    # linkedin and indeed specific
+    company_industry: str | None = None
+
+    # indeed specific
+    company_addresses: str | None = None
+    company_num_employees: str | None = None
+    company_revenue: str | None = None
+    company_description: str | None = None
+    company_logo: str | None = None
+    banner_photo_url: str | None = None
+
+    # linkedin only atm
+    job_function: str | None = None
 
 
 class JobResponse(BaseModel):

@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
 from ..jobs import (
     Enum,
     BaseModel,
     JobType,
     JobResponse,
     Country,
-    DescriptionFormat
+    DescriptionFormat,
 )
 
 
@@ -13,11 +17,18 @@ class Site(Enum):
     INDEED = "indeed"
     ZIP_RECRUITER = "zip_recruiter"
     GLASSDOOR = "glassdoor"
+    GOOGLE = "google"
+
+
+class SalarySource(Enum):
+    DIRECT_DATA = "direct_data"
+    DESCRIPTION = "description"
 
 
 class ScraperInput(BaseModel):
     site_type: list[Site]
     search_term: str | None = None
+    google_search_term: str | None = None
 
     location: str | None = None
     country: Country | None = Country.USA
@@ -34,9 +45,13 @@ class ScraperInput(BaseModel):
     hours_old: int | None = None
 
 
-class Scraper:
-    def __init__(self, site: Site, proxy: list[str] | None = None):
+class Scraper(ABC):
+    def __init__(
+        self, site: Site, proxies: list[str] | None = None, ca_cert: str | None = None
+    ):
         self.site = site
-        self.proxy = (lambda p: {"http": p, "https": p} if p else None)(proxy)
+        self.proxies = proxies
+        self.ca_cert = ca_cert
 
+    @abstractmethod
     def scrape(self, scraper_input: ScraperInput) -> JobResponse: ...
