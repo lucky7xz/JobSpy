@@ -1,13 +1,10 @@
 <img src="https://github.com/cullenwatson/JobSpy/assets/78247585/ae185b7e-e444-4712-8bb9-fa97f53e896b" width="400">
 
-**JobSpy** is a simple, yet comprehensive, job scraping library.
-
-*Looking to build a data-focused software product?* **[Book a call](https://bunsly.com/)** *to
-work with us.*
+**JobSpy** is a job scraping library with the goal of aggregating all the jobs from popular job boards with one tool.
 
 ## Features
 
-- Scrapes job postings from **LinkedIn**, **Indeed**, **Glassdoor**, **Google**, & **ZipRecruiter** simultaneously
+- Scrapes job postings from **LinkedIn**, **Indeed**, **Glassdoor**, **Google**, **ZipRecruiter**, **Bayt** & **Naukri** concurrently
 - Aggregates the job postings in a dataframe
 - Proxies support to bypass blocking
 
@@ -28,7 +25,7 @@ import csv
 from jobspy import scrape_jobs
 
 jobs = scrape_jobs(
-    site_name=["indeed", "linkedin", "zip_recruiter", "glassdoor", "google"],
+    site_name=["indeed", "linkedin", "zip_recruiter", "glassdoor", "google", "bayt", "naukri"],
     search_term="software engineer",
     google_search_term="software engineer jobs near San Francisco, CA since yesterday",
     location="San Francisco, CA",
@@ -54,6 +51,7 @@ linkedin       Software Engineer - Early Career  Lockheed Martin   Sunnyvale    
 linkedin       Full-Stack Software Engineer      Rain              New York      NY     fulltime  yearly    None        None        https://www.linkedin.com/jobs/view/3696158877      Rain’s mission is to create the fastest and ea...
 zip_recruiter Software Engineer - New Grad       ZipRecruiter      Santa Monica  CA     fulltime  yearly    130000      150000      https://www.ziprecruiter.com/jobs/ziprecruiter...  We offer a hybrid work environment. Most US-ba...
 zip_recruiter Software Developer                 TEKsystems        Phoenix       AZ     fulltime  hourly    65          75          https://www.ziprecruiter.com/jobs/teksystems-0...  Top Skills' Details• 6 years of Java developme...
+
 ```
 
 ### Parameters for `scrape_jobs()`
@@ -61,7 +59,7 @@ zip_recruiter Software Developer                 TEKsystems        Phoenix      
 ```plaintext
 Optional
 ├── site_name (list|str): 
-|    linkedin, zip_recruiter, indeed, glassdoor, google
+|    linkedin, zip_recruiter, indeed, glassdoor, google, bayt
 |    (default is all)
 │
 ├── search_term (str)
@@ -87,7 +85,7 @@ Optional
 |    number of job results to retrieve for each site specified in 'site_name'
 │
 ├── easy_apply (bool): 
-|    filters for jobs that are hosted on the job board site
+|    filters for jobs that are hosted on the job board site (LinkedIn easy apply filter no longer works)
 │
 ├── description_format (str): 
 |    markdown, html (Format type of the job descriptions. Default is markdown.)
@@ -132,46 +130,6 @@ Optional
 |    - easy_apply
 ```
 
-
-### JobPost Schema
-
-```plaintext
-JobPost
-├── title
-├── company
-├── company_url
-├── job_url
-├── location
-│   ├── country
-│   ├── city
-│   ├── state
-├── description
-├── job_type: fulltime, parttime, internship, contract
-├── job_function
-│   ├── interval: yearly, monthly, weekly, daily, hourly
-│   ├── min_amount
-│   ├── max_amount
-│   ├── currency
-│   └── salary_source: direct_data, description (parsed from posting)
-├── date_posted
-├── emails
-└── is_remote
-
-Linkedin specific
-└── job_level
-
-Linkedin & Indeed specific
-└── company_industry
-
-Indeed specific
-├── company_country
-├── company_addresses
-├── company_employees_label
-├── company_revenue_label
-├── company_description
-└── company_logo
-```
-
 ## Supported Countries for Job Searching
 
 ### **LinkedIn**
@@ -208,6 +166,11 @@ You can specify the following countries when searching on Indeed (use the exact 
 | United Arab Emirates | UK*          | USA*       | Uruguay        |
 | Venezuela            | Vietnam*     |            |                |
 
+### **Bayt**
+
+Bayt only uses the search_term parameter currently and searches internationally
+
+
 
 ## Notes
 * Indeed is the best scraper currently with no rate limiting.  
@@ -233,6 +196,11 @@ This searches the description/title and must include software, summer, 2025, one
 
 ---
 
+**Q: No results when using "google"?**  
+**A:** You have to use super specific syntax. Search for google jobs on your browser and then whatever pops up in the google jobs search box after applying some filters is what you need to copy & paste into the google_search_term. 
+
+---
+
 **Q: Received a response code 429?**  
 **A:** This indicates that you have been blocked by the job board site for sending too many requests. All of the job board sites are aggressive with blocking. We recommend:
 
@@ -241,8 +209,49 @@ This searches the description/title and must include software, summer, 2025, one
 
 ---
 
-**Q: Encountering issues with your queries?**  
-**A:** Try reducing the number of `results_wanted` and/or broadening the filters. If problems
-persist, [submit an issue](https://github.com/Bunsly/JobSpy/issues).
+### JobPost Schema
 
----
+```plaintext
+JobPost
+├── title
+├── company
+├── company_url
+├── job_url
+├── location
+│   ├── country
+│   ├── city
+│   ├── state
+├── is_remote
+├── description
+├── job_type: fulltime, parttime, internship, contract
+├── job_function
+│   ├── interval: yearly, monthly, weekly, daily, hourly
+│   ├── min_amount
+│   ├── max_amount
+│   ├── currency
+│   └── salary_source: direct_data, description (parsed from posting)
+├── date_posted
+└── emails
+
+Linkedin specific
+└── job_level
+
+Linkedin & Indeed specific
+└── company_industry
+
+Indeed specific
+├── company_country
+├── company_addresses
+├── company_employees_label
+├── company_revenue_label
+├── company_description
+└── company_logo
+
+Naukri specific
+├── skills
+├── experience_range
+├── company_rating
+├── company_reviews_count
+├── vacancy_count
+└── work_from_home_type
+```
