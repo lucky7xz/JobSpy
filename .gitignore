@@ -6,6 +6,10 @@
 **/results/
 **/output/
 **/users/
+**/proxy/
+
+
+!/src/users/default/*
 **/.DS_Store
 *.pyc
 .env
