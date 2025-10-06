@@ -35,6 +35,7 @@ from jobspy.util import (
     extract_emails_from_text,
     currency_parser,
     markdown_converter,
+    plain_converter,
     create_session,
     remove_attributes,
     create_logger,
@@ -50,7 +51,7 @@ class LinkedIn(Scraper):
     jobs_per_page = 25
 
     def __init__(
-        self, proxies: list[str] | str | None = None, ca_cert: str | None = None
+        self, proxies: list[str] | str | None = None, ca_cert: str | None = None, user_agent: str | None = None
     ):
         """
         Initializes LinkedInScraper with the LinkedIn job search url
@@ -164,7 +165,7 @@ class LinkedIn(Scraper):
 
             if continue_search():
                 time.sleep(random.uniform(self.delay, self.delay + self.band_delay))
-                start += len(job_list)
+                start += len(job_cards)
 
         job_list = job_list[: scraper_input.results_wanted]
         return JobResponse(jobs=job_list)
@@ -267,7 +268,8 @@ class LinkedIn(Scraper):
             description = div_content.prettify(formatter="html")
             if self.scraper_input.description_format == DescriptionFormat.MARKDOWN:
                 description = markdown_converter(description)
-
+            elif self.scraper_input.description_format == DescriptionFormat.PLAIN:
+                description = plain_converter(description)
         h3_tag = soup.find(
             "h3", text=lambda text: text and "Job function" in text.strip()
         )

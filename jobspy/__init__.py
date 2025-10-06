@@ -6,6 +6,7 @@ from typing import Tuple
 import pandas as pd
 
 from jobspy.bayt import BaytScraper
+from jobspy.bdjobs import BDJobs
 from jobspy.glassdoor import Glassdoor
 from jobspy.google import Google
 from jobspy.indeed import Indeed
@@ -24,6 +25,8 @@ from jobspy.util import (
 )
 from jobspy.ziprecruiter import ZipRecruiter
 
+
+# Update the SCRAPER_MAPPING dictionary in the scrape_jobs function
 
 def scrape_jobs(
     site_name: str | list[str] | Site | list[Site] | None = None,
@@ -45,6 +48,7 @@ def scrape_jobs(
     hours_old: int = None,
     enforce_annual_salary: bool = False,
     verbose: int = 0,
+    user_agent: str = None,
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -59,6 +63,7 @@ def scrape_jobs(
         Site.GOOGLE: Google,
         Site.BAYT: BaytScraper,
         Site.NAUKRI: Naukri,
+        Site.BDJOBS: BDJobs,  # Add BDJobs to the scraper mapping
     }
     set_logger_level(verbose)
     job_type = get_enum_from_value(job_type) if job_type else None
@@ -98,10 +103,11 @@ def scrape_jobs(
 
     def scrape_site(site: Site) -> Tuple[str, JobResponse]:
         scraper_class = SCRAPER_MAPPING[site]
-        scraper = scraper_class(proxies=proxies, ca_cert=ca_cert)
+        scraper = scraper_class(proxies=proxies, ca_cert=ca_cert, user_agent=user_agent)
         scraped_data: JobResponse = scraper.scrape(scraper_input)
         cap_name = site.value.capitalize()
         site_name = "ZipRecruiter" if cap_name == "Zip_recruiter" else cap_name
+        site_name = "LinkedIn" if cap_name == "Linkedin" else cap_name
         create_logger(site_name).info(f"finished scraping")
         return site.value, scraped_data
 
@@ -213,3 +219,9 @@ def scrape_jobs(
         ).reset_index(drop=True)
     else:
         return pd.DataFrame()
+
+
+# Add BDJobs to __all__
+__all__ = [
+    "BDJobs",
+]
