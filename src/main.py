@@ -28,6 +28,9 @@ def main():
 
         # Run for a specific user configuration
         poetry run python -m src.main src/users/default/default_config.yaml
+
+        # Open links from a CSV file
+        poetry run python -m src.open_links src/output/default/20251007/lux_std.csv
     """
     parser = argparse.ArgumentParser(description="JobSpy CLI")
     parser.add_argument('config_path', nargs='?', default=None, help="Path to a specific user config file.")

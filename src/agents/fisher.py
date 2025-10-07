@@ -23,14 +23,14 @@ class Agent_Fisher:
         date = now.strftime("%Y%m%d")
         return date
 
-    def update_keywords_left(self, kewords_for_this_search: list, ss_path: str) -> list[str]:
-        files = glob.glob(os.path.join(ss_path, "*.csv"))
+    def update_keywords_left(self, kewords_for_this_search: list, ss_out_path: str) -> list[str]:
+        files = glob.glob(os.path.join(ss_out_path, "*.csv"))
         files = [os.path.basename(file) for file in files]
 
         keywords_done = [keyword for keyword in kewords_for_this_search if f"{keyword}.csv" in files]
         keywords_left = [keyword for keyword in kewords_for_this_search if keyword not in keywords_done]
 
-        logger.info(f"--- Path: {ss_path}/*.csv ---")
+        logger.info(f"--- Path: {ss_out_path}/*.csv ---")
         logger.info(f"Keywords done: {len(keywords_done)} : {keywords_done}")
         logger.info(f"Keywords left: {len(keywords_left)} : {keywords_left}")
         return keywords_left
@@ -45,11 +45,14 @@ class Agent_Fisher:
         jobs = empty_jobs
 
         ss_path = os.path.join("users", username, date, search_setting['name'])
-        keywords_left = self.update_keywords_left(keywords, ss_path)
+        ss_out_path = os.path.join("output", username, date, search_setting['name'])
+        keywords_left = self.update_keywords_left(keywords, ss_out_path)
 
         while keywords_left:
             keyword = random.choice(keywords_left)
-            kw_path = os.path.join(ss_path, f"{keyword}.csv")
+            
+            kw_path = os.path.join(ss_out_path, f"{keyword}.csv")
+            #kw_out_path = os.path.join(ss_out_path, f"{keyword}.csv")
 
             logger.info(f"Keyword: *** {keyword} *** -> Starting search...")
 
@@ -57,6 +60,7 @@ class Agent_Fisher:
                 jobs = scrape_jobs(
                     site_name=search_setting['site_name'],
                     search_term=keyword,
+                    location=search_setting.get('location'),
                     proxy=self.proxy,
                     hours_old=search_setting['hours_old'],
                     is_remote=search_setting['is_remote'],
@@ -72,7 +76,7 @@ class Agent_Fisher:
                 elif "Could not find any results for the search" in str(e):
                     logger.warning(f"No jobs found for keyword: {keyword}. Writing empty file...")
                     empty_jobs.to_csv(kw_path, quoting=csv.QUOTE_NONNUMERIC, escapechar="\\", index=False)
-                    keywords_left = self.update_keywords_left(keywords, ss_path)
+                    keywords_left = self.update_keywords_left(keywords, ss_out_path)
                 continue
 
             logger.info(f"Number of jobs found: {len(jobs)}")
@@ -86,7 +90,7 @@ class Agent_Fisher:
                 logger.info(f"Writing jobs to file: {kw_path}")
                 jobs.to_csv(kw_path, quoting=csv.QUOTE_NONNUMERIC, escapechar="\\", index=False)
             
-            keywords_left = self.update_keywords_left(keywords, ss_path)
+            keywords_left = self.update_keywords_left(keywords, ss_out_path)
         return True
 
     def run_user(self, user_config: dict) -> None:

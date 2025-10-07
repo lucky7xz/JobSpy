@@ -91,7 +91,7 @@ class Agent_Perry:
     def agg_the_agg(self) -> None:
         logger.info(" ---> Aggregating the Aggregates...")
         for user in self.perrys_todo:
-            agg_files = glob.glob(f"users/{user}/**/agg.csv")
+            agg_files = glob.glob(f"output/{user}/**/agg.csv")
             if not agg_files:
                 logger.warning(f"    - No Aggregates found for {user}")
                 continue
@@ -113,11 +113,16 @@ class Agent_Perry:
             agg_df = agg_df.sort_values(by="date", ascending=True)
             agg_df = agg_df.drop_duplicates("job_url", keep="first")
             agg_df = agg_df.drop_duplicates(subset=["title", "company"], keep="first")
-            agg_df.to_csv(f"users/{user}/agg_agg.csv", index=False)
+
+            cols_to_order = ['date_posted', 'is_remote', 'user', 'date', 'SS', 'KW']
+            new_columns = cols_to_order + [col for col in agg_df.columns if col not in cols_to_order]
+            agg_df = agg_df[new_columns]
+
+            agg_df.to_csv(f"output/{user}/agg_agg.csv", index=False)
             
             final_date = agg_df["date"].max()
             agg_df_quo = agg_df[agg_df["date"] == final_date]
-            agg_df_quo.to_csv(f"users/{user}/agg_agg_today.csv", index=False)
+            agg_df_quo.to_csv(f"output/{user}/agg_agg_today.csv", index=False)
             
             list_of_links = agg_df_quo["job_url"].tolist()
             logger.info(f"Found {len(list_of_links)} new jobs for {user}")
