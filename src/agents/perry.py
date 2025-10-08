@@ -32,18 +32,18 @@ class Agent_Perry:
                 logger.warning(f"User: {username} - No search settings found - Empty List")
                 continue
             
-            dates = glob.glob(f'users/{username}/*')
+            dates = glob.glob(f'output/{username}/*')
             dates = [os.path.basename(date) for date in dates if "." not in date]
 
             for date in dates:
-                search_setting_folder_paths = glob.glob(f'users/{username}/{date}/*')
+                search_setting_folder_paths = glob.glob(f'output/{username}/{date}/*')
                 search_setting_folder_paths = [folder for folder in search_setting_folder_paths if "." not in folder]
                 perrys_todo[username][date] = search_setting_folder_paths
 
             for user, scraper_runs in perrys_todo.items():
                 logger.info("\n --- Destination folders for {user}: ---")
                 for date_entry, search_setting_folders in scraper_runs.items():
-                    destination_folder = os.path.join('users', user, date_entry)
+                    destination_folder = os.path.join('output', user, date_entry)
                     logger.info(f"{destination_folder}")
                     
                     for search_setting_folder in search_setting_folders:
@@ -60,7 +60,7 @@ class Agent_Perry:
         for user, scraper_runs in self.perrys_todo.items():
             logger.info("\n --- Aggregating data for {user}: ---")
             for date_entry, search_setting_folders in scraper_runs.items():
-                destination_folder = os.path.join('users', user, date_entry)
+                destination_folder = os.path.join('output', user, date_entry)
                 template = pd.DataFrame(columns=[ "job_url",
                             "site", "title", "company", "company_url", "location", "job_type",
                             "date_posted", "interval", "min_amount", "max_amount", "currency",

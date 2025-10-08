@@ -19,7 +19,7 @@ STOPWORDS = set([
 
 def sanitize_filename(filename):
     """Removes characters that are invalid for filenames."""
-    return re.sub(r'[\\/*?:\"<>|]', "", filename)
+    return re.sub(r'[\\/*?:"<>|]', "", filename)
 
 def get_word_frequencies(series):
     """Calculates word frequencies from a pandas Series."""
@@ -46,7 +46,7 @@ def generate_word_cloud_image(frequencies, title, output_path):
 
 def generate_analytics(input_path: str):
     """
-    Generates a summary CSV with word frequencies, a main plot with bar charts,
+    Generates a summary CSV with word frequencies, a main 2x2 plot,
     and a directory of individual word clouds for each keyword.
     """
     input_p = Path(input_path)
@@ -59,22 +59,39 @@ def generate_analytics(input_path: str):
         print(f"Analytics skipped: File '{input_path}' is empty.")
         return
 
-    # --- 1. Revert Main Plot to 2x1 Bar Charts ---
-    fig, axes = plt.subplots(2, 1, figsize=(12, 16))
-    fig.suptitle('Job Search Analytics', fontsize=16)
+    # --- 1. Generate Main 2x2 Plot ---
+    fig, axes = plt.subplots(2, 2, figsize=(20, 18))
+    fig.suptitle('Job Search Analytics', fontsize=20)
 
+    # Top-Left: SS Counts
     ss_counts = df['SS'].value_counts()
-    sns.barplot(x=ss_counts.index, y=ss_counts.values, ax=axes[0])
-    axes[0].set_title('Total Jobs per Search Setting (SS)')
-    axes[0].tick_params(axis='x', rotation=45)
+    sns.barplot(x=ss_counts.index, y=ss_counts.values, ax=axes[0, 0])
+    axes[0, 0].set_title('Total Jobs per Search Setting (SS)')
+    axes[0, 0].tick_params(axis='x', rotation=45)
 
+    # Top-Right: KW Breakdown
     if 'KW' in df.columns:
         kw_ss_counts = df.groupby(['SS', 'KW']).size().unstack(fill_value=0)
-        kw_ss_counts.plot(kind='bar', stacked=False, ax=axes[1])
-        axes[1].set_title('Job Breakdown by Keyword (KW) per SS')
-        axes[1].tick_params(axis='x', rotation=45)
+        kw_ss_counts.plot(kind='bar', stacked=False, ax=axes[0, 1])
+        axes[0, 1].set_title('Job Breakdown by Keyword (KW) per SS')
+        axes[0, 1].tick_params(axis='x', rotation=45)
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.96])
+    # Bottom-Left: Job Source Distribution
+    site_counts = df['site'].value_counts()
+    axes[1, 0].pie(site_counts, labels=site_counts.index, autopct='%1.1f%%', startangle=140)
+    axes[1, 0].set_title('Job Source Distribution')
+    axes[1, 0].axis('equal') 
+
+    # Bottom-Right: Data Completeness
+    cols_to_exclude = ['id', 'user', 'date', 'SS', 'KW']
+    completeness_df = df.drop(columns=cols_to_exclude)
+    completeness = (completeness_df.notna().sum() / len(completeness_df)) * 100
+    completeness = completeness.sort_values(ascending=False)
+    sns.barplot(x=completeness.values, y=completeness.index, ax=axes[1, 1], orient='h')
+    axes[1, 1].set_title('Data Completeness per Column (%)')
+    axes[1, 1].set_xlabel('Completeness (%)')
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.97])
     plots_output_path = input_p.parent / f"{input_p.stem}_plots.png"
     plt.savefig(plots_output_path)
     print(f"Main analytics plots saved to {plots_output_path}")
@@ -97,19 +114,16 @@ def generate_analytics(input_path: str):
         kw_df = df[df['KW'] == kw]
         count = len(kw_df)
 
-        # Calculate frequencies
         title_freq = get_word_frequencies(kw_df['title'])
         location_freq = get_word_frequencies(kw_df['location'])
 
-        # Generate and save cloud images
-        sanitized_kw = sanitize_filename(kw)
+        sanitized_kw = sanitize_filename(str(kw))
         title_cloud_path = clouds_dir / f"{sanitized_kw}_{count}_title.png"
         location_cloud_path = clouds_dir / f"{sanitized_kw}_{count}_location.png"
         
         generate_word_cloud_image(title_freq, f"Keyword: '{kw}' ({count} Jobs)", title_cloud_path)
         generate_word_cloud_image(location_freq, f"Keyword: '{kw}' ({count} Jobs)", location_cloud_path)
 
-        # Store data for CSV
         analytics_data.append({
             'KW': kw,
             'count': count,
@@ -121,7 +135,6 @@ def generate_analytics(input_path: str):
     summary_df = df.groupby(['SS', 'KW']).size().reset_index(name='count')
     freq_df = pd.DataFrame(analytics_data)
     
-    # Merge the two dataframes
     final_df = pd.merge(summary_df, freq_df.drop('count', axis=1), on='KW', how='left')
 
     analytics_output_path = input_p.parent / f"{input_p.stem}_analytics.csv"
