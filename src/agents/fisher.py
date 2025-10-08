@@ -110,7 +110,7 @@ class Agent_Fisher:
             return
 
         for search_setting in user_config['search_settings']:
-            date_path = os.path.join("users", username, self.date_run)
+            date_path = os.path.join("output", username, self.date_run)
             search_setting_path = os.path.join(date_path, search_setting['name'])
 
             if not os.path.exists(date_path):

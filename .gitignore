@@ -10,7 +10,7 @@
 **/users/
 **/proxy/
 **/archive/
-
+**/notes.md
 
 !/src/users/default/*
 **/.DS_Store

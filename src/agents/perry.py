@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 
 from src.utils.logger import get_logger
+from src.analytics import generate_analytics
 
 logger = get_logger(__name__)
 
@@ -118,11 +119,16 @@ class Agent_Perry:
             new_columns = cols_to_order + [col for col in agg_df.columns if col not in cols_to_order]
             agg_df = agg_df[new_columns]
 
-            agg_df.to_csv(f"output/{user}/agg_agg.csv", index=False)
+            agg_agg_path = f"output/{user}/agg_agg.csv"
+            agg_df.to_csv(agg_agg_path, index=False)
+            generate_analytics(agg_agg_path)
             
             final_date = agg_df["date"].max()
             agg_df_quo = agg_df[agg_df["date"] == final_date]
-            agg_df_quo.to_csv(f"output/{user}/agg_agg_today.csv", index=False)
+
+            agg_agg_today_path = f"output/{user}/agg_agg_today.csv"
+            agg_df_quo.to_csv(agg_agg_today_path, index=False)
+            generate_analytics(agg_agg_today_path)
             
             list_of_links = agg_df_quo["job_url"].tolist()
             logger.info(f"Found {len(list_of_links)} new jobs for {user}")
