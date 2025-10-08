@@ -45,7 +45,7 @@ def main():
 
     perry = Agent_Perry(user_configs)
     perry.daily_aggregate()
-    perry.agg_the_agg()
+    perry.create_master_aggregates()
 
 if __name__ == "__main__":
     main()

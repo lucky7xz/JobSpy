@@ -87,51 +87,44 @@ class Agent_Perry:
                 
                 template = template.drop_duplicates("job_url", keep="first")
                 template = template.drop_duplicates(subset=["title", "company"], keep="first")
-                template.to_csv(f"{destination_folder}/agg.csv", index=False)
+                template.to_csv(f"{destination_folder}/date_agg.csv", index=False)
 
-    def agg_the_agg(self) -> None:
+    def create_master_aggregates(self) -> None:
         logger.info(" ---> Aggregating the Aggregates...")
         for user in self.perrys_todo:
-            agg_files = glob.glob(f"output/{user}/**/agg.csv")
+            agg_files = glob.glob(f"output/{user}/**/date_agg.csv")
             if not agg_files:
                 logger.warning(f"    - No Aggregates found for {user}")
                 continue
 
-            logger.info("\n --- Aggregating Aggregates for {user}: ---")
-            agg_df = pd.DataFrame(columns=[ "job_url",
-                            "site", "title", "company", "company_url", "location", "job_type",
-                            "date_posted", "interval", "min_amount", "max_amount", "currency",
-                            "is_remote", "num_urgent_words", "benefits", "emails", "description",
-                            "user","date","SS","KW"])
+            logger.info(f"\n --- Aggregating Aggregates for {user}: ---")
             
+            agg_df = pd.DataFrame()
             for agg_file in agg_files:
                 read_df = pd.read_csv(agg_file)
                 agg_df = pd.concat([agg_df, read_df])
-
-            agg_df.drop(["interval", "min_amount", "max_amount", "currency",
-                            "num_urgent_words", "benefits", "emails", "description"], axis=1, inplace=True)
         
             agg_df = agg_df.sort_values(by="date", ascending=True)
             agg_df = agg_df.drop_duplicates("job_url", keep="first")
             agg_df = agg_df.drop_duplicates(subset=["title", "company"], keep="first")
 
-            cols_to_order = ['date_posted', 'is_remote', 'user', 'date', 'SS', 'KW']
-            new_columns = cols_to_order + [col for col in agg_df.columns if col not in cols_to_order]
-            agg_df = agg_df[new_columns]
-
-            agg_agg_path = f"output/{user}/agg_agg.csv"
-            agg_df.to_csv(agg_agg_path, index=False)
-            generate_analytics(agg_agg_path)
+            all_agg_path = f"output/{user}/all_agg.csv"
+            agg_df.to_csv(all_agg_path, index=False)
+            generate_analytics(all_agg_path)
             
+            # Create today_agg.csv
             final_date = agg_df["date"].max()
-            agg_df_quo = agg_df[agg_df["date"] == final_date]
-
-            agg_agg_today_path = f"output/{user}/agg_agg_today.csv"
-            agg_df_quo.to_csv(agg_agg_today_path, index=False)
-            generate_analytics(agg_agg_today_path)
             
-            list_of_links = agg_df_quo["job_url"].tolist()
-            logger.info(f"Found {len(list_of_links)} new jobs for {user}")
+            today_df = agg_df[agg_df["date"] == final_date]
+            previous_df = agg_df[agg_df["date"] < final_date]
+            
+            new_jobs_df = today_df[~today_df['job_url'].isin(previous_df['job_url'])]
+
+            today_agg_path = f"output/{user}/today_agg.csv"
+            new_jobs_df.to_csv(today_agg_path, index=False)
+            generate_analytics(today_agg_path)
+            
+            logger.info(f"Found {len(new_jobs_df)} new jobs for {user}")
 
     def send_post_request(self, data):
         # This is a placeholder for sending a post request

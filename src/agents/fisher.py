@@ -12,10 +12,10 @@ logger = get_logger(__name__)
 
 class Agent_Fisher:
     def __init__(self, proxy):
-        logger.info(" / ***Agent Fisher is online *** /")
         logger.info("Instantiating Fisher...")
         self.date_run = self.get_date()
         self.proxy = proxy
+        logger.info(" / ***Agent Fisher is online *** /\n\n")
 
     @staticmethod
     def get_date() -> str:
@@ -31,8 +31,8 @@ class Agent_Fisher:
         keywords_left = [keyword for keyword in kewords_for_this_search if keyword not in keywords_done]
 
         logger.info(f"--- Path: {ss_out_path}/*.csv ---")
-        logger.info(f"Keywords done: {len(keywords_done)} : {keywords_done}")
-        logger.info(f"Keywords left: {len(keywords_left)} : {keywords_left}")
+        logger.info(f"Keywords done:  {len(keywords_done)} : \n {keywords_done} \n" )
+        logger.info(f"Keywords left: {len(keywords_left)} : \n {keywords_left} \n")
         return keywords_left
 
     def run_search_setting(self, username: str, search_setting: dict, date: str) -> bool:
